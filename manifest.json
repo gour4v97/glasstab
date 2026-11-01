@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "GlassTab — Comet-style New Tab",
   "short_name": "GlassTab",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A Comet-inspired glassmorphism new tab: AI-first search bar, frosted-glass cards, quick links, weather and deep customization.",
   "permissions": ["storage", "topSites", "favicon", "bookmarks"],
   "host_permissions": [
@@ -12,6 +12,13 @@
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
+  "content_scripts": [
+    {
+      "matches": ["https://gemini.google.com/*"],
+      "js": ["js/gemini-prefill.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

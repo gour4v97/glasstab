@@ -10,8 +10,8 @@ no build step, no frameworks, no tracking.
 ## Features
 
 - ✦ **AI-first search pill** — Enter searches with your browser's default
-  engine; `Ask AI` hands off to Perplexity, ChatGPT, Claude, Duck.ai or a
-  custom URL template
+  engine; `Ask AI` hands off to **Gemini** (auto-prefilled via a content
+  script), Perplexity, ChatGPT, Claude, Duck.ai or a custom URL template
 - 🧊 **Real glassmorphism** — backdrop-blur cards with adjustable blur,
   opacity and corner radius; animated mesh-gradient backgrounds (8 presets),
   solid colors, or your own image (URL or upload)

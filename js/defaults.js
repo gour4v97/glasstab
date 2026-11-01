@@ -47,7 +47,7 @@ GT.DEFAULTS = {
 
   search: {
     defaultMode: "search",       // search | ai
-    aiProvider: "perplexity",    // perplexity | chatgpt | claude | duckai | custom
+    aiProvider: "gemini",        // gemini | perplexity | chatgpt | claude | duckai | custom
     customUrl: "",               // template with {q}
     openInNewTab: false,
     focusOnLoad: true
@@ -70,6 +70,7 @@ GT.GRADIENTS = [
 ];
 
 GT.AI_PROVIDERS = [
+  { id: "gemini",     name: "Gemini",      url: "https://gemini.google.com/app?q={q}" },
   { id: "perplexity", name: "Perplexity",  url: "https://www.perplexity.ai/search?q={q}" },
   { id: "chatgpt",    name: "ChatGPT",     url: "https://chatgpt.com/?q={q}" },
   { id: "claude",     name: "Claude",      url: "https://claude.ai/new?q={q}" },
