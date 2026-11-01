@@ -58,6 +58,24 @@ Click the ⚙ on the page (top-right). Everything is stored in
 | Cards | quick links, weather, bookmarks |
 | Search | Enter action (search/ask AI), AI provider, custom template, new tab |
 
+## Troubleshooting
+
+### Brave's bottom "Customize Brave" bar
+
+That bar (page title + "Customize Brave" button) is stamped on extension new
+tabs by the browser itself — Chromium calls it the *NTP footer* — so the
+extension can't remove it. Three supported ways to kill it:
+
+1. **Right-click the bar → "Hide footer"** (permanent, stored in your profile
+   as the `NewTabPage.FooterVisible` pref — the cleanest fix)
+2. `brave://flags/#ntp-footer` → **Disabled** → relaunch (flag may be absent
+   on Chromium > M140)
+3. Launch Brave with `--disable-features=NtpFooter`
+
+### Still seeing the old chip ("Ask Perplexity") after updates?
+
+Reload the extension: `brave://extensions` → GlassTab → ↻ reload.
+
 ## Privacy
 
 - No analytics, no remote code, no external requests except:
