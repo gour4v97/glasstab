@@ -152,7 +152,7 @@ GT.settingsDrawer = (function () {
       { value: "image", label: "Image" }
     ],
       () => settings.background.type,
-      (v) => { settings.background.type = v; refreshDynamic(sBg); }
+      (v) => { settings.background.type = v; refreshBgDynamic(sBg); }
     )));
 
     const gradWrap = el("div");
@@ -173,7 +173,7 @@ GT.settingsDrawer = (function () {
         settings.background.type = "gradient";
         settings.background.gradientId = g.id;
         commit();
-        refreshDynamic(sBg);
+        refreshBgDynamic(sBg);
       });
       gradWrap.appendChild(sw);
     });
@@ -184,7 +184,6 @@ GT.settingsDrawer = (function () {
     gradRow.dataset.dynamic = "gradient";
 
     const solidCtl = colorEl(() => settings.background.solid, (v) => { settings.background.solid = v; });
-    solidCtl.parentElement; // no-op
     const solidRow = row("Solid color", solidCtl);
     solidRow.dataset.dynamic = "solid";
 
@@ -238,7 +237,7 @@ GT.settingsDrawer = (function () {
     )));
     drawer.appendChild(sBg);
 
-    function refreshDynamic(parent) {
+    function refreshBgDynamic(parent) {
       const type = settings.background.type;
       parent.querySelectorAll("[data-dynamic]").forEach((n) => {
         n.hidden = n.dataset.dynamic !== type;
@@ -248,7 +247,7 @@ GT.settingsDrawer = (function () {
           (type === "daily" || settings.background.gradientId === sw.title.toLowerCase()) ? "true" : "false");
       });
     }
-    sBg.refreshDynamic = refreshDynamic;
+    sBg.refreshDynamic = refreshBgDynamic;
 
     /* Glass */
     const sGlass = section("Glass");
@@ -300,7 +299,7 @@ GT.settingsDrawer = (function () {
     sSearch.appendChild(row("AI provider", selectEl(
       GT.AI_PROVIDERS.map((p) => ({ value: p.id, label: p.name })),
       () => settings.search.aiProvider,
-      (v) => { settings.search.aiProvider = v; refreshDynamic(sSearch); }
+      (v) => { settings.search.aiProvider = v; refreshSearchDynamic(sSearch); }
     )));
     const customRow = row("Custom URL template", textEl("https://…?q={q}",
       () => settings.search.customUrl,
@@ -313,12 +312,12 @@ GT.settingsDrawer = (function () {
       () => settings.search.focusOnLoad, (v) => { settings.search.focusOnLoad = v; })));
     drawer.appendChild(sSearch);
 
-    function refreshDynamic(parent) {
+    function refreshSearchDynamic(parent) {
       parent.querySelectorAll("[data-dynamic]").forEach((n) => {
         n.hidden = n.dataset.dynamic !== settings.search.aiProvider;
       });
     }
-    sSearch.refreshDynamic = refreshDynamic;
+    sSearch.refreshDynamic = refreshSearchDynamic;
 
     /* Reset */
     const reset = el("button", "reset-btn", "Reset all settings");
@@ -333,8 +332,8 @@ GT.settingsDrawer = (function () {
     });
     drawer.appendChild(reset);
 
-    refreshDynamic(sBg);
-    refreshDynamic(sSearch);
+    refreshBgDynamic(sBg);
+    refreshSearchDynamic(sSearch);
   }
 
   /* ---------- open/close ---------- */
