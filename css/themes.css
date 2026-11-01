@@ -1,0 +1,76 @@
+/* GlassTab — theme tokens (light/dark/auto) + accent.
+   JS sets: --accent-h/--accent-s/--accent-l, data-theme on <html>. */
+
+:root {
+  --accent-h: 258;
+  --accent-s: 90%;
+  --accent-l: 66%;
+  --accent: hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-soft: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / .22);
+  --accent-text: hsl(var(--accent-h) 30% 96%);
+
+  --radius: 20px;
+  --blur: 24px;
+  --glass-opacity: .55;
+
+  /* dark theme by default (backgrounds are mostly rich/dark) */
+  --text: #ffffff;
+  --text-dim: rgba(255, 255, 255, .68);
+  --text-faint: rgba(255, 255, 255, .45);
+  --glass-tint: 255, 255, 255;       /* rgb triplet used by glass.css */
+  --glass-tint-alpha: .10;
+  --glass-border: rgba(255, 255, 255, .16);
+  --glass-highlight: rgba(255, 255, 255, .12);
+  --shadow: 0 10px 34px rgba(0, 0, 0, .35);
+  --input-bg: rgba(255, 255, 255, .06);
+  --chip-active-bg: hsl(var(--accent-h) var(--accent-s) var(--accent-l) / .30);
+}
+
+html[data-theme="light"] {
+  --text: #171a26;
+  --text-dim: rgba(23, 26, 38, .72);
+  --text-faint: rgba(23, 26, 38, .5);
+  --glass-tint: 255, 255, 255;
+  --glass-tint-alpha: .52;
+  --glass-border: rgba(255, 255, 255, .65);
+  --glass-highlight: rgba(255, 255, 255, .7);
+  --shadow: 0 10px 30px rgba(31, 35, 65, .18);
+  --input-bg: rgba(255, 255, 255, .4);
+  --accent-text: hsl(var(--accent-h) 60% 30%);
+}
+
+html[data-theme="auto"] {
+  color-scheme: light dark;
+}
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; }
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  overflow: hidden;
+}
+
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+
+input, select {
+  font-family: inherit;
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
