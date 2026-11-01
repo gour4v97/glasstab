@@ -17,8 +17,8 @@
   --text: #ffffff;
   --text-dim: rgba(255, 255, 255, .68);
   --text-faint: rgba(255, 255, 255, .45);
-  --glass-tint: 255, 255, 255;       /* rgb triplet used by glass.css */
-  --glass-tint-alpha: .10;
+  --glass-tint: 12, 14, 24;          /* rgb triplet used by glass.css (dark frost) */
+  --glass-tint-alpha: .40;
   --glass-border: rgba(255, 255, 255, .16);
   --glass-highlight: rgba(255, 255, 255, .12);
   --shadow: 0 10px 34px rgba(0, 0, 0, .35);
