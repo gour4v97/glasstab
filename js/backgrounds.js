@@ -1,48 +1,41 @@
-/* GlassTab — background engine: mesh gradients, solid, image, daily rotate.
-   Custom uploaded images are downscaled and kept in chrome.storage.local
-   (too large for the sync quota). */
+/* GlassTab — background engine. Expensive work is skipped when only
+   unrelated settings change, and video playback stops in hidden tabs. */
 
 GT.backgrounds = (function () {
   const IMAGE_KEY = "bgImageDataUrl";
   const MAX_DIM = 1920;
+  let appliedKey = "";
+  let visibilityBound = false;
 
   function gradientById(id) {
     return GT.GRADIENTS.find((g) => g.id === id) || GT.GRADIENTS[0];
   }
 
   function pickDaily() {
-    const day = Math.floor(Date.now() / 86400000);
-    return GT.GRADIENTS[day % GT.GRADIENTS.length];
+    return GT.GRADIENTS[Math.floor(Date.now() / 86400000) % GT.GRADIENTS.length];
+  }
+
+  function setBlobsVisible(visible) {
+    document.querySelectorAll(".blob").forEach((blob) => {
+      blob.style.visibility = visible ? "" : "hidden";
+    });
   }
 
   function applyGradient(grad) {
     const bg = document.getElementById("bg");
     bg.querySelector(".bg-base").style.setProperty("--bg-base", grad.base);
-    const blobs = bg.querySelectorAll(".blob");
-    ["--b1", "--b2", "--b3", "--b4"].forEach((v, i) => {
-      bg.style.setProperty(v, grad.blobs[i]);
-    });
-    blobs.forEach((b) => { b.style.visibility = ""; });
-    // re-trigger a soft fade when palette changes
-    const layer = bg.querySelector(".bg-blobs");
-    layer.style.animation = "none";
-    void layer.offsetWidth;
-    layer.style.animation = "";
+    grad.blobs.forEach((color, index) => bg.style.setProperty(`--b${index + 1}`, color));
+    setBlobsVisible(true);
   }
 
   async function loadImageDataUrl() {
-    try {
-      return (await chrome.storage.local.get(IMAGE_KEY))[IMAGE_KEY] || "";
-    } catch {
-      return "";
-    }
+    try { return (await chrome.storage.local.get(IMAGE_KEY))[IMAGE_KEY] || ""; }
+    catch { return ""; }
   }
 
   async function saveImageFile(file) {
     const dataUrl = await downscale(file);
-    const store = {};
-    store[IMAGE_KEY] = dataUrl;
-    await chrome.storage.local.set(store);
+    await chrome.storage.local.set({ [IMAGE_KEY]: dataUrl });
   }
 
   async function clearImage() {
@@ -58,12 +51,10 @@ GT.backgrounds = (function () {
         img.onerror = () => reject(new Error("decode failed"));
         img.onload = () => {
           const scale = Math.min(1, MAX_DIM / Math.max(img.width, img.height));
-          const w = Math.max(1, Math.round(img.width * scale));
-          const h = Math.max(1, Math.round(img.height * scale));
           const canvas = document.createElement("canvas");
-          canvas.width = w;
-          canvas.height = h;
-          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          canvas.width = Math.max(1, Math.round(img.width * scale));
+          canvas.height = Math.max(1, Math.round(img.height * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
           resolve(canvas.toDataURL("image/jpeg", 0.85));
         };
         img.src = reader.result;
@@ -72,42 +63,88 @@ GT.backgrounds = (function () {
     });
   }
 
+  function stopVideo(video) {
+    video.pause();
+    video.hidden = true;
+    if (video.dataset.active === "true") {
+      video.removeAttribute("src");
+      video.load();
+      video.dataset.active = "false";
+    }
+  }
+
+  function syncVideoPlayback() {
+    const video = document.getElementById("bg-video");
+    if (!video || video.hidden || document.hidden) {
+      if (video) video.pause();
+      return;
+    }
+    video.play().catch(() => { /* autoplay can be blocked until first interaction */ });
+  }
+
+  function bindVisibility() {
+    if (visibilityBound) return;
+    visibilityBound = true;
+    document.addEventListener("visibilitychange", syncVideoPlayback);
+  }
+
   async function apply(settings) {
     const bg = document.getElementById("bg");
-    const imgEl = document.getElementById("bg-image");
-    const blobs = bg.querySelectorAll(".blob");
-    bg.style.setProperty("--dim", String(settings.background.dim ?? 0.25));
+    const image = document.getElementById("bg-image");
+    const video = document.getElementById("bg-video");
+    const background = settings.background;
+    const type = background.type;
+    bg.style.setProperty("--dim", String(background.dim ?? 0.25));
+    bg.classList.toggle("motion-paused", background.motion === false);
 
-    const type = settings.background.type;
+    const key = JSON.stringify({
+      type, gradientId: background.gradientId, solid: background.solid,
+      imageUrl: background.imageUrl, videoUrl: background.videoUrl
+    });
+    if (key === appliedKey) return;
+    appliedKey = key;
+
+    image.hidden = true;
+    if (type !== "video") stopVideo(video);
+
+    if (type === "video") {
+      setBlobsVisible(false);
+      video.muted = background.videoMuted !== false;
+      video.defaultMuted = video.muted;
+      if (!background.videoUrl) {
+        stopVideo(video);
+        applyGradient(GT.GRADIENTS[0]);
+        return;
+      }
+      if (video.src !== background.videoUrl) {
+        video.src = background.videoUrl;
+        video.dataset.active = "true";
+      }
+      video.hidden = false;
+      bindVisibility();
+      syncVideoPlayback();
+      return;
+    }
 
     if (type === "image") {
-      blobs.forEach((b) => { b.style.visibility = "hidden"; });
-      if (settings.background.imageUrl) {
-        imgEl.src = settings.background.imageUrl;
-        imgEl.hidden = false;
+      setBlobsVisible(false);
+      const source = background.imageUrl || await loadImageDataUrl();
+      if (source) {
+        if (image.src !== source) image.src = source;
+        image.hidden = false;
       } else {
-        const data = await loadImageDataUrl();
-        if (data) {
-          imgEl.src = data;
-          imgEl.hidden = false;
-        } else {
-          imgEl.hidden = true;
-          applyGradient(GT.GRADIENTS[0]); // fallback while empty
-        }
+        applyGradient(GT.GRADIENTS[0]);
       }
       return;
     }
 
-    imgEl.hidden = true;
-
     if (type === "solid") {
-      blobs.forEach((b) => { b.style.visibility = "hidden"; });
-      bg.querySelector(".bg-base").style.setProperty("--bg-base", settings.background.solid || "#0f1220");
+      setBlobsVisible(false);
+      bg.querySelector(".bg-base").style.setProperty("--bg-base", background.solid || "#0f1220");
       return;
     }
 
-    const grad = type === "daily" ? pickDaily() : gradientById(settings.background.gradientId);
-    applyGradient(grad);
+    applyGradient(type === "daily" ? pickDaily() : gradientById(background.gradientId));
   }
 
   return { apply, saveImageFile, clearImage, gradientById };
