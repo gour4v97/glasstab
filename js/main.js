@@ -1,10 +1,12 @@
-/* GlassTab — bootstrap: load settings, apply theme/glass/accent, clock,
-   greeting, and wire all modules together. */
+/* GlassTab — bootstrap. Visual updates are batched so sliders stay smooth. */
 
 (function () {
   "use strict";
 
-  const state = { settings: null, themeMedia: null, clockTimer: null };
+  const state = {
+    settings: null, themeMedia: null, clockTimer: null,
+    applyFrame: 0, saveTimer: null, cardsTimer: null
+  };
 
   function hexToHsl(hex) {
     const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
@@ -21,7 +23,7 @@
     if (max !== min) {
       const d = max - min;
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0));
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
       else if (max === g) h = (b - r) / d + 2;
       else h = (r - g) / d + 4;
       h *= 60;
@@ -58,12 +60,9 @@
     document.body.classList.toggle("reduce-transparency", !!state.settings.reduceTransparency);
   }
 
-  /* ---------- clock & greeting ---------- */
-
-  function tick() {
+  function renderClock() {
     const c = state.settings.clock;
     const now = new Date();
-
     const timeEl = document.getElementById("clock");
     const dateEl = document.getElementById("date");
     const greetEl = document.getElementById("greeting");
@@ -73,32 +72,31 @@
     timeEl.hidden = !c.show;
     dateEl.hidden = !c.showDate;
 
-    const opts = c.hour12 ? { hour: "numeric", minute: "2-digit" } : { hour: "2-digit", minute: "2-digit", hour12: false };
-    if (c.seconds) opts.second = "2-digit";
+    const opts = c.hour12
+      ? { hour: "numeric", minute: "2-digit", second: c.seconds ? "2-digit" : undefined }
+      : { hour: "2-digit", minute: "2-digit", hour12: false, second: c.seconds ? "2-digit" : undefined };
     timeEl.textContent = now.toLocaleTimeString(undefined, opts);
-
     dateEl.textContent = now.toLocaleDateString(undefined,
       { weekday: "long", month: "long", day: "numeric" });
 
     if (state.settings.greeting.show) {
       const h = now.getHours();
-      const part =
-        h < 5 ? "Up late" :
-        h < 12 ? "Good morning" :
-        h < 17 ? "Good afternoon" :
-        h < 21 ? "Good evening" : "Up late";
+      const part = h < 5 ? "Up late" : h < 12 ? "Good morning" :
+        h < 17 ? "Good afternoon" : h < 21 ? "Good evening" : "Up late";
       const name = state.settings.greeting.name.trim();
       greetEl.textContent = name ? `${part}, ${name}` : part;
     } else {
       greetEl.textContent = "";
     }
-
-    const interval = state.settings.clock.seconds ? 1000 : 15000;
-    if (state.clockTimer) clearInterval(state.clockTimer);
-    state.clockTimer = setInterval(tick, interval);
   }
 
-  /* ---------- theme cycle button ---------- */
+  function scheduleClock() {
+    clearTimeout(state.clockTimer);
+    renderClock();
+    const now = Date.now();
+    const unit = state.settings.clock.seconds ? 1000 : 60000;
+    state.clockTimer = setTimeout(scheduleClock, unit - (now % unit) + 10);
+  }
 
   function bindThemeButton() {
     const order = ["auto", "light", "dark"];
@@ -106,34 +104,42 @@
     document.getElementById("btn-theme").addEventListener("click", () => {
       const next = order[(order.indexOf(state.settings.theme) + 1) % order.length];
       state.settings.theme = next;
-      persist();
+      queueSave();
       applyTheme();
       GT.toast(`Theme: ${labels[next]}`);
     });
   }
 
-  /* ---------- persistence + re-apply ---------- */
-
-  async function persist() {
-    try { await GT.saveSettings(state.settings); } catch { /* quota errors are non-fatal */ }
+  function queueSave() {
+    clearTimeout(state.saveTimer);
+    state.saveTimer = setTimeout(() => {
+      GT.saveSettings(state.settings).catch(() => { /* quota errors are non-fatal */ });
+    }, 250);
   }
 
-  function applyAll() {
+  function applyVisuals() {
     applyTheme();
     applyAccent();
     applyGlass();
     GT.backgrounds.apply(state.settings);
     GT.search.refresh(state.settings);
-    tick();
+    scheduleClock();
+  }
+
+  function scheduleCards() {
+    clearTimeout(state.cardsTimer);
+    state.cardsTimer = setTimeout(() => GT.cards.renderAll(), 450);
   }
 
   function onChange() {
-    persist();
-    applyAll();
-    GT.cards.renderAll();
+    queueSave();
+    if (state.applyFrame) return;
+    state.applyFrame = requestAnimationFrame(() => {
+      state.applyFrame = 0;
+      applyVisuals();
+      scheduleCards();
+    });
   }
-
-  /* ---------- external changes (sync from other tabs) ---------- */
 
   function watchStorage() {
     if (!chrome.storage.onChanged) return;
@@ -141,30 +147,21 @@
       if (area !== "sync" || !changes.settings) return;
       GT.loadSettings().then((fresh) => {
         state.settings = fresh;
-        applyAll();
+        applyVisuals();
         GT.cards.renderAll();
       });
     });
   }
 
-  /* ---------- boot ---------- */
-
   async function boot() {
     state.settings = await GT.loadSettings();
-
-    applyTheme();
-    applyAccent();
-    applyGlass();
-
+    applyVisuals();
     GT.search.init(state.settings);
     GT.search.refresh(state.settings);
     GT.cards.init(state.settings, onChange);
     GT.cards.renderAll();
-    GT.backgrounds.apply(state.settings);
     GT.settingsDrawer.init(state.settings, onChange);
-
     bindThemeButton();
-    tick();
     watchStorage();
   }
 
