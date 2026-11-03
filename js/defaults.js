@@ -12,10 +12,13 @@ GT.DEFAULTS = {
   accent: "#7c5cff",
 
   background: {
-    type: "gradient",            // gradient | solid | image | daily
+    type: "gradient",            // gradient | solid | image | video | daily
     gradientId: "aurora",
     solid: "#0f1220",
     imageUrl: "",
+    videoUrl: "",
+    videoMuted: true,
+    motion: true,
     dim: 0.25
   },
 
