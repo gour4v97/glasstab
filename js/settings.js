@@ -149,7 +149,8 @@ GT.settingsDrawer = (function () {
       { value: "gradient", label: "Mesh gradient" },
       { value: "daily", label: "Daily gradient" },
       { value: "solid", label: "Solid color" },
-      { value: "image", label: "Image" }
+      { value: "image", label: "Image" },
+      { value: "video", label: "Video wallpaper" }
     ],
       () => settings.background.type,
       (v) => { settings.background.type = v; refreshBgDynamic(sBg); }
@@ -227,10 +228,27 @@ GT.settingsDrawer = (function () {
     imgRow.appendChild(fileRow);
     imgRow.appendChild(el("p", "hint", "Image URL or upload — uploads are stored locally, scaled to 1920px."));
 
+    const videoRow = el("div", "row");
+    videoRow.style.flexDirection = "column";
+    videoRow.style.alignItems = "stretch";
+    videoRow.dataset.dynamic = "video";
+    const videoInput = textEl("Paste a direct .mp4 or .webm URL…",
+      () => settings.background.videoUrl || "",
+      (v) => { settings.background.videoUrl = v.trim(); });
+    videoInput.style.width = "100%";
+    videoRow.append(
+      videoInput,
+      el("p", "hint", "Video loops silently and automatically pauses when this tab is hidden.")
+    );
+
     sBg.appendChild(gradRow);
     sBg.appendChild(solidRow);
     sBg.appendChild(imgRow);
-
+    sBg.appendChild(videoRow);
+    sBg.appendChild(row("Animate gradients", switchEl(
+      () => settings.background.motion !== false,
+      (v) => { settings.background.motion = v; }
+    )));
     sBg.appendChild(row("Background dim", rangeEl(0, 0.8, 0.05,
       () => settings.background.dim,
       (v) => { settings.background.dim = v; }

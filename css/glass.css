@@ -7,6 +7,7 @@
   inset: 0;
   z-index: -1;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .bg-base {
@@ -16,12 +17,12 @@
   transition: background .6s ease;
 }
 
-.bg-blobs { position: absolute; inset: -12%; }
+.bg-blobs { position: absolute; inset: -12%; transform: translateZ(0); }
 
 .blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(90px);
+  filter: blur(70px);
   opacity: .8;
   will-change: transform;
 }
@@ -31,13 +32,16 @@
 .b3 { width: 44vw; height: 44vw; left: 22%; bottom: 2%; background: var(--b3, #f472b6); animation: drift3 24s ease-in-out infinite alternate; }
 .b4 { width: 34vw; height: 34vw; right: 14%; bottom: 10%; background: var(--b4, #34d399); animation: drift1 35s ease-in-out infinite alternate-reverse; }
 
-.bg-image {
+.bg-image,
+.bg-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
+.bg.motion-paused .blob { animation-play-state: paused; }
 
 .bg-dim {
   position: absolute;
